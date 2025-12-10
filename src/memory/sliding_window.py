@@ -46,31 +46,47 @@ class SlidingWindowMemory:
         """Add an event to memory.
 
         Converts tool calls and results to messages for context.
+        Note: Tool calls/results are stored as assistant/user messages
+        to maintain compatibility with all model providers.
 
         Args:
             event: Message, ToolCall, or ToolResult to add
         """
         if isinstance(event, Message):
-            self._messages.append(event)
+            # Skip tool role messages - they cause issues with OpenAI
+            # when sent back without proper tool_calls context
+            if event.role == "tool":
+                # Convert to user message for context
+                self._messages.append(
+                    Message(
+                        role="user",
+                        content=f"[System: {event.content}]",
+                        timestamp=event.timestamp,
+                        metadata=event.metadata,
+                    )
+                )
+            else:
+                self._messages.append(event)
 
         elif isinstance(event, ToolCall):
             # Store tool calls as assistant messages
             self._messages.append(
                 Message(
                     role="assistant",
-                    content=f"[Calling tool: {event.name}]",
+                    content=f"[Action: Using {event.name} tool with {event.arguments}]",
                     timestamp=datetime.now(),
                     metadata={"tool_call": True, "tool_name": event.name},
                 )
             )
 
         elif isinstance(event, ToolResult):
-            # Store tool results as tool messages
-            content = f"[Tool result: {event.output}]" if event.success else f"[Tool error: {event.error}]"
+            # Store tool results as user messages (system feedback)
+            # Using "user" role instead of "tool" for compatibility
+            content = f"[Tool {event.output}]" if event.success else f"[Tool error: {event.error}]"
             self._messages.append(
                 Message(
-                    role="tool",
-                    content=content,
+                    role="user",
+                    content=f"[System: {content}]",
                     timestamp=datetime.now(),
                     metadata={"tool_result": True, "success": event.success},
                 )
