@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from datetime import datetime
 from typing import AsyncIterator
+
+# Suppress macOS AVFoundation deprecation warning
+os.environ.setdefault("OPENCV_AVFOUNDATION_SKIP_AUTH", "1")
 
 import cv2
 import numpy as np
