@@ -5,14 +5,17 @@ This example demonstrates a security monitoring agent that:
 - Connects to an RTSP camera stream (IP camera)
 - Monitors for people, unusual activity, and safety hazards
 - Sends Slack alerts with appropriate severity levels
+- Saves all captured frames to a local directory
 
 Run:
     python examples/02_security_monitor.py
 
 Requirements:
-    - ANTHROPIC_API_KEY environment variable
-    - SLACK_WEBHOOK_URL environment variable
-    - RTSP camera URL (or modify to use webcam)
+    - ANTHROPIC_API_KEY or OPENAI_API_KEY environment variable
+    - SLACK_WEBHOOK_URL environment variable (optional)
+    - RTSP camera URL (or uses webcam by default)
+
+Frames are saved to: ./captured_frames/YYYY-MM-DD/
 """
 
 import asyncio
@@ -23,12 +26,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.core.agent import AgentLoop
 from src.core.config import AgentConfig
-from src.core.types import Message, ToolCall, ToolResult
+from src.core.types import Frame, Message, ToolCall, ToolResult
 from src.inputs.rtsp import RTSPInput
 from src.inputs.webcam import WebcamInput
 from src.memory.sliding_window import SlidingWindowMemory
 from src.models import create_model
 from src.tools.slack import SlackAlertTool
+from src.utils.image import FrameSaver
 
 
 SYSTEM_PROMPT = """You are a security monitoring agent watching a camera feed.
@@ -52,6 +56,24 @@ Be concise but specific in your alerts. Include:
 
 If nothing notable, just acknowledge the frame is clear.
 """
+
+
+class FrameSavingInput:
+    """Wrapper that saves frames while passing them through."""
+
+    def __init__(self, source, saver: FrameSaver):
+        self.source = source
+        self.saver = saver
+
+    async def stream(self):
+        async for frame in self.source.stream():
+            # Save each frame
+            path = self.saver.save(frame)
+            print(f"[Frame Saved] {path}")
+            yield frame
+
+    async def close(self):
+        await self.source.close()
 
 
 async def main():
@@ -92,11 +114,20 @@ async def main():
     else:
         print("Warning: SLACK_WEBHOOK_URL not set. Alerts will not be sent.")
 
+    # Set up frame saver
+    frame_saver = FrameSaver(
+        output_dir="./captured_frames",
+        format="jpg",
+        quality=85,
+        create_subdirs=True,  # Creates YYYY-MM-DD subdirectories
+    )
+    print(f"Frames will be saved to: {frame_saver.output_dir.absolute()}")
+
     # Choose input source
     rtsp_url = os.getenv("RTSP_URL")
     if rtsp_url:
         print(f"Connecting to RTSP stream...")
-        input_source = RTSPInput(
+        raw_input = RTSPInput(
             url=rtsp_url,
             fps=0.2,  # 1 frame every 5 seconds
             auto_reconnect=True,
@@ -104,11 +135,14 @@ async def main():
         )
     else:
         print("No RTSP_URL set, using webcam as demo...")
-        input_source = WebcamInput(
+        raw_input = WebcamInput(
             device_id=0,
             fps=0.2,
             max_size=512,
         )
+
+    # Wrap input to save frames
+    input_source = FrameSavingInput(raw_input, frame_saver)
 
     print("\nMonitoring started. Press Ctrl+C to stop.\n")
     print("-" * 50)
@@ -131,6 +165,8 @@ async def main():
     except KeyboardInterrupt:
         print("\n\nShutting down security monitor...")
         agent.stop()
+        print(f"Total frames saved: {frame_saver.saved_count}")
+        print(f"Frames location: {frame_saver.output_dir.absolute()}")
 
 
 if __name__ == "__main__":
