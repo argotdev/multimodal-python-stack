@@ -32,6 +32,39 @@ class GoogleVisionModel(VisionLanguageModel):
     provider = "google"
 
     MODELS = {
+        "gemini-2.5-pro-preview-06-05": ModelInfo(
+            model_id="gemini-2.5-pro-preview-06-05",
+            provider="google",
+            display_name="Gemini 2.5 Pro",
+            max_images=3600,
+            supports_video=True,
+            supports_tools=True,
+            cost_per_1k_input=0.00125,
+            cost_per_1k_output=0.01,
+            context_window=1000000,
+        ),
+        "gemini-2.5-flash-preview-05-20": ModelInfo(
+            model_id="gemini-2.5-flash-preview-05-20",
+            provider="google",
+            display_name="Gemini 2.5 Flash",
+            max_images=3600,
+            supports_video=True,
+            supports_tools=True,
+            cost_per_1k_input=0.00015,
+            cost_per_1k_output=0.0006,
+            context_window=1000000,
+        ),
+        "gemini-2.0-flash": ModelInfo(
+            model_id="gemini-2.0-flash",
+            provider="google",
+            display_name="Gemini 2.0 Flash",
+            max_images=3600,
+            supports_video=True,
+            supports_tools=True,
+            cost_per_1k_input=0.0001,
+            cost_per_1k_output=0.0004,
+            context_window=1000000,
+        ),
         "gemini-1.5-flash": ModelInfo(
             model_id="gemini-1.5-flash",
             provider="google",
@@ -53,17 +86,6 @@ class GoogleVisionModel(VisionLanguageModel):
             cost_per_1k_input=0.00125,
             cost_per_1k_output=0.005,
             context_window=2000000,
-        ),
-        "gemini-2.0-flash": ModelInfo(
-            model_id="gemini-2.0-flash",
-            provider="google",
-            display_name="Gemini 2.0 Flash",
-            max_images=3600,
-            supports_video=True,
-            supports_tools=True,
-            cost_per_1k_input=0.0001,
-            cost_per_1k_output=0.0004,
-            context_window=1000000,
         ),
     }
 
