@@ -15,6 +15,7 @@ Requirements:
     - GROQ_API_KEY
     - FIREWORKS_API_KEY
     - TOGETHER_API_KEY
+    - MODAL_ENDPOINT_URL (for Modal-hosted models)
 """
 
 import asyncio
@@ -44,8 +45,11 @@ async def main():
         available_models.extend([
             ("openai", "gpt-4o-mini"),
             ("openai", "gpt-4o"),
+            ("openai", "gpt-4.1-mini"),
+            ("openai", "gpt-4.1-nano"),
+            ("openai", "o3-mini"),
         ])
-        print("  ✓ OpenAI (gpt-4o, gpt-4o-mini)")
+        print("  ✓ OpenAI (gpt-4o, gpt-4o-mini, gpt-4.1-mini, gpt-4.1-nano, o3-mini)")
     else:
         print("  ✗ OpenAI (set OPENAI_API_KEY)")
 
@@ -53,18 +57,19 @@ async def main():
     if os.getenv("ANTHROPIC_API_KEY"):
         available_models.extend([
             ("anthropic", "claude-3-5-haiku-latest"),
-            ("anthropic", "claude-3-5-sonnet-latest"),
+            ("anthropic", "claude-sonnet-4-20250514"),
         ])
-        print("  ✓ Anthropic (claude-3-5-haiku, claude-3-5-sonnet)")
+        print("  ✓ Anthropic (claude-3-5-haiku, claude-sonnet-4)")
     else:
         print("  ✗ Anthropic (set ANTHROPIC_API_KEY)")
 
     # Google
     if os.getenv("GOOGLE_API_KEY"):
         available_models.extend([
-            ("google", "gemini-1.5-flash"),
+            ("google", "gemini-2.0-flash"),
+            ("google", "gemini-2.5-flash-preview-05-20"),
         ])
-        print("  ✓ Google (gemini-1.5-flash)")
+        print("  ✓ Google (gemini-2.0-flash, gemini-2.5-flash)")
     else:
         print("  ✗ Google (set GOOGLE_API_KEY)")
 
@@ -95,6 +100,15 @@ async def main():
     else:
         print("  ✗ Together (set TOGETHER_API_KEY)")
 
+    # Modal
+    if os.getenv("MODAL_ENDPOINT_URL"):
+        # Modal requires endpoint URL and optionally a model_id
+        modal_model_id = os.getenv("MODAL_MODEL_ID", "custom")
+        available_models.append(("modal", modal_model_id))
+        print(f"  ✓ Modal ({modal_model_id})")
+    else:
+        print("  ✗ Modal (set MODAL_ENDPOINT_URL)")
+
     print()
 
     if not available_models:
@@ -111,7 +125,15 @@ async def main():
     # Add available models
     for provider, model_id in available_models:
         try:
-            model = create_model(provider, model_id)
+            if provider == "modal":
+                # Modal needs special handling for endpoint_url
+                model = create_model(
+                    provider,
+                    model_id,
+                    endpoint_url=os.getenv("MODAL_ENDPOINT_URL"),
+                )
+            else:
+                model = create_model(provider, model_id)
             runner.add_model(model)
             print(f"  Added: {provider}/{model_id}")
         except Exception as e:
