@@ -7,6 +7,7 @@ from src.models.google import GoogleVisionModel
 from src.models.groq import GroqVisionModel
 from src.models.fireworks import FireworksVisionModel
 from src.models.together import TogetherVisionModel
+from src.models.modal import ModalVisionModel
 
 __all__ = [
     "VisionLanguageModel",
@@ -17,6 +18,7 @@ __all__ = [
     "GroqVisionModel",
     "FireworksVisionModel",
     "TogetherVisionModel",
+    "ModalVisionModel",
     "create_model",
     "list_models",
 ]
@@ -29,6 +31,7 @@ PROVIDERS = {
     "groq": GroqVisionModel,
     "fireworks": FireworksVisionModel,
     "together": TogetherVisionModel,
+    "modal": ModalVisionModel,
 }
 
 
