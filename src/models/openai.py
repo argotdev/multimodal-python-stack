@@ -31,6 +31,87 @@ class OpenAIVisionModel(VisionLanguageModel):
     provider = "openai"
 
     MODELS = {
+        # GPT-5.2 Family (December 2025 - Latest)
+        "gpt-5.2": ModelInfo(
+            model_id="gpt-5.2",
+            provider="openai",
+            display_name="GPT-5.2 Thinking",
+            max_images=10,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.00175,
+            cost_per_1k_output=0.014,
+            context_window=200000,
+        ),
+        "gpt-5.2-pro": ModelInfo(
+            model_id="gpt-5.2-pro",
+            provider="openai",
+            display_name="GPT-5.2 Pro",
+            max_images=10,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.015,
+            cost_per_1k_output=0.06,
+            context_window=200000,
+        ),
+        "gpt-5.2-chat-latest": ModelInfo(
+            model_id="gpt-5.2-chat-latest",
+            provider="openai",
+            display_name="GPT-5.2 Instant",
+            max_images=10,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.001,
+            cost_per_1k_output=0.004,
+            context_window=200000,
+        ),
+        # GPT-5.1 Family (November 2025)
+        "gpt-5.1": ModelInfo(
+            model_id="gpt-5.1-2025-11-13",
+            provider="openai",
+            display_name="GPT-5.1",
+            max_images=10,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.00175,
+            cost_per_1k_output=0.014,
+            context_window=200000,
+        ),
+        # GPT-5 Family (August 2025)
+        "gpt-5": ModelInfo(
+            model_id="gpt-5",
+            provider="openai",
+            display_name="GPT-5",
+            max_images=10,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.002,
+            cost_per_1k_output=0.008,
+            context_window=200000,
+        ),
+        "gpt-5-mini": ModelInfo(
+            model_id="gpt-5-mini",
+            provider="openai",
+            display_name="GPT-5 Mini",
+            max_images=10,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.0004,
+            cost_per_1k_output=0.0016,
+            context_window=200000,
+        ),
+        "gpt-5-nano": ModelInfo(
+            model_id="gpt-5-nano",
+            provider="openai",
+            display_name="GPT-5 Nano",
+            max_images=10,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.0001,
+            cost_per_1k_output=0.0004,
+            context_window=200000,
+        ),
+        # GPT-4.1 Family
         "gpt-4.1": ModelInfo(
             model_id="gpt-4.1",
             provider="openai",
@@ -64,6 +145,7 @@ class OpenAIVisionModel(VisionLanguageModel):
             cost_per_1k_output=0.0004,
             context_window=1047576,
         ),
+        # GPT-4o Family (Legacy)
         "gpt-4o": ModelInfo(
             model_id="gpt-4o",
             provider="openai",
@@ -86,28 +168,7 @@ class OpenAIVisionModel(VisionLanguageModel):
             cost_per_1k_output=0.0006,
             context_window=128000,
         ),
-        "o1": ModelInfo(
-            model_id="o1",
-            provider="openai",
-            display_name="o1",
-            max_images=10,
-            supports_video=False,
-            supports_tools=True,
-            cost_per_1k_input=0.015,
-            cost_per_1k_output=0.06,
-            context_window=200000,
-        ),
-        "o1-mini": ModelInfo(
-            model_id="o1-mini",
-            provider="openai",
-            display_name="o1-mini",
-            max_images=10,
-            supports_video=False,
-            supports_tools=True,
-            cost_per_1k_input=0.001,
-            cost_per_1k_output=0.004,
-            context_window=128000,
-        ),
+        # o-series reasoning models
         "o3-mini": ModelInfo(
             model_id="o3-mini",
             provider="openai",
@@ -164,14 +225,23 @@ class OpenAIVisionModel(VisionLanguageModel):
         openai_tools = [t.to_openai_format() for t in tools] if tools else None
 
         # Create streaming completion
-        stream = await self.client.chat.completions.create(
-            model=self.model_id,
-            messages=messages,
-            tools=openai_tools,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            stream=True,
-        )
+        # GPT-5+ models use max_completion_tokens instead of max_tokens
+        is_gpt5_plus = self.model_id.startswith(("gpt-5", "o3", "o1"))
+        token_param = "max_completion_tokens" if is_gpt5_plus else "max_tokens"
+
+        create_params = {
+            "model": self.model_id,
+            "messages": messages,
+            "tools": openai_tools,
+            token_param: self.max_tokens,
+            "stream": True,
+        }
+
+        # GPT-5+ models don't support temperature with reasoning
+        if not is_gpt5_plus:
+            create_params["temperature"] = self.temperature
+
+        stream = await self.client.chat.completions.create(**create_params)
 
         # Track accumulated content and tool calls
         current_content = ""
