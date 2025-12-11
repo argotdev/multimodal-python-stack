@@ -30,6 +30,41 @@ class AnthropicVisionModel(VisionLanguageModel):
     provider = "anthropic"
 
     MODELS = {
+        # Claude 4.5 Family (November 2025 - Latest)
+        "claude-opus-4-5-20251101": ModelInfo(
+            model_id="claude-opus-4-5-20251101",
+            provider="anthropic",
+            display_name="Claude Opus 4.5",
+            max_images=20,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.005,
+            cost_per_1k_output=0.025,
+            context_window=200000,
+        ),
+        "claude-sonnet-4-5": ModelInfo(
+            model_id="claude-sonnet-4-5",
+            provider="anthropic",
+            display_name="Claude Sonnet 4.5",
+            max_images=20,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.003,
+            cost_per_1k_output=0.015,
+            context_window=200000,
+        ),
+        "claude-haiku-4-5": ModelInfo(
+            model_id="claude-haiku-4-5",
+            provider="anthropic",
+            display_name="Claude Haiku 4.5",
+            max_images=20,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.001,
+            cost_per_1k_output=0.005,
+            context_window=200000,
+        ),
+        # Claude 4 Family (May 2025)
         "claude-opus-4-20250514": ModelInfo(
             model_id="claude-opus-4-20250514",
             provider="anthropic",
@@ -52,6 +87,7 @@ class AnthropicVisionModel(VisionLanguageModel):
             cost_per_1k_output=0.015,
             context_window=200000,
         ),
+        # Claude 3.5 Family (Legacy)
         "claude-3-5-sonnet-latest": ModelInfo(
             model_id="claude-3-5-sonnet-latest",
             provider="anthropic",
