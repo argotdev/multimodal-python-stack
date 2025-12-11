@@ -32,7 +32,31 @@ class GoogleVisionModel(VisionLanguageModel):
     provider = "google"
 
     MODELS = {
-        "gemini-2.5-pro-preview-06-05": ModelInfo(
+        # Gemini 3 Family (November 2025 - Latest)
+        "gemini-3.0-pro": ModelInfo(
+            model_id="gemini-3.0-pro",
+            provider="google",
+            display_name="Gemini 3.0 Pro",
+            max_images=3600,
+            supports_video=True,
+            supports_tools=True,
+            cost_per_1k_input=0.00125,
+            cost_per_1k_output=0.005,
+            context_window=2000000,
+        ),
+        "gemini-3.0-flash": ModelInfo(
+            model_id="gemini-3.0-flash",
+            provider="google",
+            display_name="Gemini 3.0 Flash",
+            max_images=3600,
+            supports_video=True,
+            supports_tools=True,
+            cost_per_1k_input=0.0001,
+            cost_per_1k_output=0.0004,
+            context_window=1000000,
+        ),
+        # Gemini 2.5 Family
+        "gemini-2.5-pro": ModelInfo(
             model_id="gemini-2.5-pro-preview-06-05",
             provider="google",
             display_name="Gemini 2.5 Pro",
@@ -43,7 +67,7 @@ class GoogleVisionModel(VisionLanguageModel):
             cost_per_1k_output=0.01,
             context_window=1000000,
         ),
-        "gemini-2.5-flash-preview-05-20": ModelInfo(
+        "gemini-2.5-flash": ModelInfo(
             model_id="gemini-2.5-flash-preview-05-20",
             provider="google",
             display_name="Gemini 2.5 Flash",
@@ -54,6 +78,18 @@ class GoogleVisionModel(VisionLanguageModel):
             cost_per_1k_output=0.0006,
             context_window=1000000,
         ),
+        "gemini-2.5-flash-lite": ModelInfo(
+            model_id="gemini-2.5-flash-lite",
+            provider="google",
+            display_name="Gemini 2.5 Flash Lite",
+            max_images=3600,
+            supports_video=True,
+            supports_tools=True,
+            cost_per_1k_input=0.000075,
+            cost_per_1k_output=0.0003,
+            context_window=1000000,
+        ),
+        # Gemini 2.0 Family
         "gemini-2.0-flash": ModelInfo(
             model_id="gemini-2.0-flash",
             provider="google",
@@ -65,6 +101,7 @@ class GoogleVisionModel(VisionLanguageModel):
             cost_per_1k_output=0.0004,
             context_window=1000000,
         ),
+        # Gemini 1.5 Family (Legacy)
         "gemini-1.5-flash": ModelInfo(
             model_id="gemini-1.5-flash",
             provider="google",
