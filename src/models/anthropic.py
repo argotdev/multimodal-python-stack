@@ -30,6 +30,17 @@ class AnthropicVisionModel(VisionLanguageModel):
     provider = "anthropic"
 
     MODELS = {
+        "claude-opus-4-20250514": ModelInfo(
+            model_id="claude-opus-4-20250514",
+            provider="anthropic",
+            display_name="Claude Opus 4",
+            max_images=20,
+            supports_video=False,
+            supports_tools=True,
+            cost_per_1k_input=0.015,
+            cost_per_1k_output=0.075,
+            context_window=200000,
+        ),
         "claude-sonnet-4-20250514": ModelInfo(
             model_id="claude-sonnet-4-20250514",
             provider="anthropic",
