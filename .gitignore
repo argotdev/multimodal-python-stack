@@ -54,6 +54,9 @@ dmypy.json
 benchmarks/temp/
 benchmarks/results/*.tmp
 
+# Images
+captured_frames/
+
 # OS
 .DS_Store
 Thumbs.db
