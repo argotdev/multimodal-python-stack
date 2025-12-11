@@ -88,6 +88,7 @@ async def main():
         model = create_model("openai", "gpt-4o-mini")
     else:
         # Use Claude 3.5 Haiku - fast and cost-effective
+        print("Using Claude 3.5 Haiku - fast and cost-effective")
         model = create_model("anthropic", "claude-3-5-haiku-latest")
 
     memory = SlidingWindowMemory(max_messages=20)
