@@ -3,12 +3,178 @@
 from __future__ import annotations
 
 import io
+from datetime import datetime
+from pathlib import Path
 from typing import Sequence
 
 import numpy as np
 from PIL import Image
 
 from src.core.types import Frame
+
+
+class FrameSaver:
+    """Save frames to a local directory.
+
+    Example:
+        saver = FrameSaver("./captured_frames")
+
+        # Save a frame
+        path = saver.save(frame)
+        print(f"Saved to {path}")
+
+        # Save with custom name
+        path = saver.save(frame, name="alert_001")
+    """
+
+    def __init__(
+        self,
+        output_dir: str | Path = "./frames",
+        format: str = "jpg",
+        quality: int = 85,
+        create_subdirs: bool = True,
+    ):
+        """Initialize frame saver.
+
+        Args:
+            output_dir: Directory to save frames
+            format: Image format (jpg, png, webp)
+            quality: JPEG/WebP quality (0-100)
+            create_subdirs: Create date-based subdirectories (YYYY-MM-DD)
+        """
+        self.output_dir = Path(output_dir)
+        self.format = format.lower()
+        self.quality = quality
+        self.create_subdirs = create_subdirs
+        self._frame_count = 0
+
+        # Create output directory
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    def save(
+        self,
+        frame: Frame,
+        name: str | None = None,
+        metadata: dict | None = None,
+    ) -> Path:
+        """Save a frame to disk.
+
+        Args:
+            frame: Frame to save
+            name: Optional custom filename (without extension)
+            metadata: Optional metadata to save as JSON sidecar
+
+        Returns:
+            Path to saved file
+        """
+        # Determine output directory
+        if self.create_subdirs:
+            date_dir = self.output_dir / frame.timestamp.strftime("%Y-%m-%d")
+            date_dir.mkdir(parents=True, exist_ok=True)
+            save_dir = date_dir
+        else:
+            save_dir = self.output_dir
+
+        # Generate filename
+        if name:
+            filename = f"{name}.{self.format}"
+        else:
+            timestamp_str = frame.timestamp.strftime("%H%M%S_%f")[:-3]  # HHMMSSmmm
+            self._frame_count += 1
+            filename = f"frame_{timestamp_str}_{self._frame_count:04d}.{self.format}"
+
+        filepath = save_dir / filename
+
+        # Save image
+        img = Image.fromarray(frame.data)
+
+        save_kwargs = {}
+        if self.format in ("jpg", "jpeg"):
+            save_kwargs["quality"] = self.quality
+            save_kwargs["optimize"] = True
+        elif self.format == "webp":
+            save_kwargs["quality"] = self.quality
+        elif self.format == "png":
+            save_kwargs["optimize"] = True
+
+        img.save(filepath, **save_kwargs)
+
+        # Save metadata sidecar if provided
+        if metadata:
+            import json
+            meta_path = filepath.with_suffix(".json")
+            full_metadata = {
+                "timestamp": frame.timestamp.isoformat(),
+                "source": frame.source,
+                "shape": list(frame.data.shape),
+                **metadata,
+            }
+            with open(meta_path, "w") as f:
+                json.dump(full_metadata, f, indent=2)
+
+        return filepath
+
+    def save_batch(
+        self,
+        frames: list[Frame],
+        prefix: str = "batch",
+    ) -> list[Path]:
+        """Save multiple frames.
+
+        Args:
+            frames: List of frames to save
+            prefix: Filename prefix
+
+        Returns:
+            List of paths to saved files
+        """
+        paths = []
+        for i, frame in enumerate(frames):
+            path = self.save(frame, name=f"{prefix}_{i:04d}")
+            paths.append(path)
+        return paths
+
+    @property
+    def saved_count(self) -> int:
+        """Number of frames saved."""
+        return self._frame_count
+
+
+def save_frame(
+    frame: Frame,
+    path: str | Path,
+    format: str = "jpg",
+    quality: int = 85,
+) -> Path:
+    """Save a single frame to a specific path.
+
+    Args:
+        frame: Frame to save
+        path: Output path (with or without extension)
+        format: Image format if not in path
+        quality: JPEG/WebP quality
+
+    Returns:
+        Path to saved file
+    """
+    path = Path(path)
+
+    # Add extension if not present
+    if not path.suffix:
+        path = path.with_suffix(f".{format}")
+
+    # Create parent directory
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Save
+    img = Image.fromarray(frame.data)
+
+    save_kwargs = {}
+    if path.suffix.lower() in (".jpg", ".jpeg"):
+        save_kwargs["quality"] = quality
+
+    img.save(path, **save_kwargs)
+    return path
 
 
 def resize_frame(
