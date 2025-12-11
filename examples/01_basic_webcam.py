@@ -5,6 +5,7 @@ This example shows the minimal code needed to run a multimodal agent:
 - Capture frames from your webcam
 - Send them to a vision-language model
 - Print the model's observations
+- Save all captured frames to a local directory
 
 Run:
     python examples/01_basic_webcam.py
@@ -12,6 +13,8 @@ Run:
 Requirements:
     - OPENAI_API_KEY environment variable (or use .env file)
     - Webcam connected
+
+Frames are saved to: ./captured_frames/YYYY-MM-DD/
 """
 
 import asyncio
@@ -27,6 +30,24 @@ from src.core.types import Message
 from src.inputs.webcam import WebcamInput
 from src.memory.sliding_window import SlidingWindowMemory
 from src.models import create_model
+from src.utils.image import FrameSaver
+
+
+class FrameSavingInput:
+    """Wrapper that saves frames while passing them through."""
+
+    def __init__(self, source, saver: FrameSaver):
+        self.source = source
+        self.saver = saver
+
+    async def stream(self):
+        async for frame in self.source.stream():
+            path = self.saver.save(frame)
+            print(f"[Frame Saved] {path}")
+            yield frame
+
+    async def close(self):
+        await self.source.close()
 
 
 async def main():
@@ -58,13 +79,25 @@ async def main():
         ),
     )
 
+    # Set up frame saver
+    frame_saver = FrameSaver(
+        output_dir="./captured_frames",
+        format="jpg",
+        quality=85,
+        create_subdirs=True,
+    )
+    print(f"Frames will be saved to: {frame_saver.output_dir.absolute()}")
+
     # Create webcam input
     print("Opening webcam...")
-    webcam = WebcamInput(
+    raw_webcam = WebcamInput(
         device_id=0,  # Default camera
         fps=0.33,  # ~1 frame every 3 seconds
         max_size=512,  # Resize for efficiency
     )
+
+    # Wrap to save frames
+    webcam = FrameSavingInput(raw_webcam, frame_saver)
 
     print("Ready! Waiting for frames...\n")
 
@@ -94,6 +127,8 @@ async def main():
     except KeyboardInterrupt:
         print("\nStopping agent...")
         agent.stop()
+        print(f"Total frames saved: {frame_saver.saved_count}")
+        print(f"Frames location: {frame_saver.output_dir.absolute()}")
 
 
 if __name__ == "__main__":
